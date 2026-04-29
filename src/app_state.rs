@@ -65,6 +65,14 @@ pub struct AppState {
 }
 
 impl AppState {
+    pub fn new_gamestate(
+        exercise_infos: Vec<ExerciseInfo>,
+        final_message: &'static str,
+        editor: Option<Editor>,
+        vs_code_term: bool,
+    ){
+
+    }
     pub fn new(
         exercise_infos: Vec<ExerciseInfo>,
         final_message: &'static str,
@@ -185,6 +193,7 @@ impl AppState {
 
         Ok((slf, state_file_status))
     }
+
 
     pub fn current_exercise_ind(&self) -> usize {
         self.current_exercise_ind

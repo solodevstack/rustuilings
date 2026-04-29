@@ -181,6 +181,9 @@ fn main() -> Result<ExitCode> {
         }
         // Handled in an earlier match.
         Some(Command::Init | Command::Dev(_)) => (),
+        Some(Command::Rustuigames { name }) =>{
+            
+        }
     }
 
     Ok(ExitCode::SUCCESS)

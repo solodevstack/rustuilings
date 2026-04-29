@@ -51,6 +51,10 @@ pub enum Command {
         /// The name of the exercise
         name: Option<String>,
     },
+    Rustuigames {
+        /// The name of the exercise
+        name: Option<String>,
+    },
     /// Commands for developing (community) Rustlings exercises
     #[command(subcommand)]
     Dev(DevCommand),
