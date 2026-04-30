@@ -14,6 +14,7 @@ pub enum InputEvent {
     CheckAll,
     Reset,
     Quit,
+    Game
 }
 
 pub fn terminal_event_handler(
@@ -51,6 +52,9 @@ pub fn terminal_event_handler(
 
                         continue;
                     }
+                    
+                    //gaming event
+                    KeyCode::Char('g') => InputEvent::Game,
                     KeyCode::Char('q') => break WatchEvent::Input(InputEvent::Quit),
                     _ => continue,
                 };

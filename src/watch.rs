@@ -94,6 +94,14 @@ fn run_watch(
 
     while let Ok(event) = watch_event_receiver.recv() {
         match event {
+
+            //gaming watch event added
+              WatchEvent::Input(InputEvent::Game) => match watch_state.next_exercise(&mut stdout)? {
+                ExercisesProgress::AllDone => break,
+                ExercisesProgress::NewPending => watch_state.run_current_exercise(&mut stdout)?,
+                ExercisesProgress::CurrentPending => (),
+            },
+
             WatchEvent::Input(InputEvent::Next) => match watch_state.next_exercise(&mut stdout)? {
                 ExercisesProgress::AllDone => break,
                 ExercisesProgress::NewPending => watch_state.run_current_exercise(&mut stdout)?,

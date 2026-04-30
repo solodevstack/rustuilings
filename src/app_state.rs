@@ -65,14 +65,14 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new_gamestate(
-        exercise_infos: Vec<ExerciseInfo>,
-        final_message: &'static str,
-        editor: Option<Editor>,
-        vs_code_term: bool,
-    ){
+    // pub fn new_gamestate(
+    //     exercise_infos: Vec<ExerciseInfo>,
+    //     final_message: &'static str,
+    //     editor: Option<Editor>,
+    //     vs_code_term: bool,
+    // ){
 
-    }
+    // }
     pub fn new(
         exercise_infos: Vec<ExerciseInfo>,
         final_message: &'static str,

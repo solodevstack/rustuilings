@@ -206,6 +206,9 @@ impl<'a> WatchState<'a> {
         show_key(b'x', b":reset / ")?;
         show_key(b'q', b":quit ? ")?;
 
+        //gaming prompt
+        show_key(b'g', b":rustuigames ? ")?;
+
         stdout.flush()
     }
 
