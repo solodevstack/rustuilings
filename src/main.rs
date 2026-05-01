@@ -30,6 +30,7 @@ mod list;
 mod run;
 mod term;
 mod watch;
+mod gamify;
 
 const CURRENT_FORMAT_VERSION: u8 = 1;
 

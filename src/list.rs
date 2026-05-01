@@ -103,6 +103,7 @@ fn handle_list(app_state: &mut AppState, stdout: &mut StdoutLock) -> Result<()> 
                 _ => continue,
             },
             Event::Resize(width, height) => list_state.set_term_size(width, height),
+            Event::Paste(_)=> continue,
             // Ignore
             Event::FocusGained | Event::FocusLost => continue,
         }

@@ -1,4 +1,7 @@
+
+
 use anyhow::{Context, Result};
+
 use crossterm::{
     QueueableCommand,
     style::{
@@ -275,6 +278,7 @@ impl<'a> WatchState<'a> {
 
         Ok(())
     }
+    
 
     pub fn check_all_exercises(&mut self, stdout: &mut StdoutLock) -> Result<ExercisesProgress> {
         // Ignore any input until checking all exercises is done.

@@ -14,6 +14,7 @@ use crate::{
     app_state::{AppState, ExercisesProgress},
     list,
     watch::{notify_event::NotifyEventHandler, state::WatchState, terminal_event::InputEvent},
+    gamify
 };
 
 mod notify_event;
@@ -54,6 +55,7 @@ enum WatchExit {
     Shutdown,
     /// Enter the list mode and restart the watch mode afterwards.
     List,
+    Game
 }
 
 fn run_watch(
@@ -96,11 +98,7 @@ fn run_watch(
         match event {
 
             //gaming watch event added
-              WatchEvent::Input(InputEvent::Game) => match watch_state.next_exercise(&mut stdout)? {
-                ExercisesProgress::AllDone => break,
-                ExercisesProgress::NewPending => watch_state.run_current_exercise(&mut stdout)?,
-                ExercisesProgress::CurrentPending => (),
-            },
+            WatchEvent::Input(InputEvent::Game) => return  Ok(WatchExit::Game),
 
             WatchEvent::Input(InputEvent::Next) => match watch_state.next_exercise(&mut stdout)? {
                 ExercisesProgress::AllDone => break,
@@ -149,6 +147,8 @@ fn watch_list_loop(
             // the watch mode instead of trying to pause the watch threads and correct the
             // watch state.
             WatchExit::List => list::list(app_state)?,
+
+            WatchExit::Game => gamify::ratatui_render()?
         }
     }
 }
