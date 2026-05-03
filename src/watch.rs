@@ -1,4 +1,5 @@
 use anyhow::{Error, Result};
+use crossterm::execute;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     io::{self, Write},
@@ -148,7 +149,17 @@ fn watch_list_loop(
             // watch state.
             WatchExit::List => list::list(app_state)?,
 
-            WatchExit::Game => gamify::ratatui_render()?
+          WatchExit::Game => {
+    // save rustlings terminal state
+    crossterm::terminal::disable_raw_mode()?;
+    execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
+
+    gamify::ratatui_render()?;
+
+    // restore rustlings terminal state  
+    execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen)?;
+    crossterm::terminal::enable_raw_mode()?;
+}
         }
     }
 }

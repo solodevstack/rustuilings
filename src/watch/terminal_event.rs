@@ -54,7 +54,7 @@ pub fn terminal_event_handler(
                     }
                     
                     //gaming event
-                    KeyCode::Char('g') => InputEvent::Game,
+                   KeyCode::Char('g') => break WatchEvent::Input(InputEvent::Game),
                     KeyCode::Char('q') => break WatchEvent::Input(InputEvent::Quit),
                     _ => continue,
                 };
