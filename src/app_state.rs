@@ -25,6 +25,7 @@ use crate::{
 
 const STATE_FILE_NAME: &str = ".rustlings-state.txt";
 const DEFAULT_CHECK_PARALLELISM: usize = 8;
+const POINTS_PER_EXERCISE: u32 = 10;
 
 #[must_use]
 pub enum ExercisesProgress {
@@ -50,6 +51,7 @@ pub enum CheckProgress {
 }
 
 pub struct AppState {
+    game_score : u32,
     current_exercise_ind: usize,
     exercises: Vec<Exercise>,
     // Cache the number of done exercises to avoid iterating over all exercises every time.
@@ -132,16 +134,39 @@ impl AppState {
             })
             .collect::<Vec<_>>();
 
+        //
+        let mut game_score               = 0u32;
+
         let mut current_exercise_ind = 0;
         let mut n_done = 0;
         let mut file_buf = Vec::with_capacity(2048);
+        
         let state_file_status = 'block: {
+            
             if state_file.read_to_end(&mut file_buf).is_err() {
                 break 'block StateFileStatus::NotRead;
             }
 
             // See `Self::write` for more information about the file format.
-            let mut lines = file_buf.split(|c| *c == b'\n').skip(2);
+            let mut lines = file_buf.split(|c| *c == b'\n').skip(2); // 👈 skip header lines
+
+            //  let mut lines = file_buf.split(|b| *b == b'\n'); //.skip(2) removed
+
+            // Line 3: score
+            let score_line = match lines.next() {
+                Some(l) if !l.is_empty() => l,
+                _ => break 'block StateFileStatus::NotRead
+            };
+            let Ok(score_str) = std::str::from_utf8(score_line) else {
+                break 'block StateFileStatus::NotRead;
+            };
+            let Ok(saved_score) = score_str.trim().parse::<u32>() else {
+                break 'block StateFileStatus::NotRead;
+            };
+            game_score = saved_score;
+            
+
+            ///
 
             let Some(current_exercise_name) = lines.next() else {
                 break 'block StateFileStatus::NotRead;
@@ -176,8 +201,10 @@ impl AppState {
 
         file_buf.clear();
         file_buf.extend_from_slice(STATE_FILE_HEADER);
+        
 
         let slf = Self {
+            game_score,
             current_exercise_ind,
             exercises,
             n_done,
@@ -193,6 +220,14 @@ impl AppState {
 
         Ok((slf, state_file_status))
     }
+
+   // ── Progress ─────────────────────────────────────────────────────────────
+
+    /// Mark the current exercise as done, award points, then pick the next
+    /// random pending exercise.
+    ///
+    /// Returns `true` when all exercises are complete.
+
 
 
     pub fn current_exercise_ind(&self) -> usize {
@@ -233,6 +268,12 @@ impl AppState {
     // - All remaining lines are the names of done exercises.
     fn write(&mut self) -> Result<()> {
         self.file_buf.truncate(STATE_FILE_HEADER.len());
+
+
+            // persist score first game
+    let score_str = self.game_score.to_string();
+    self.file_buf.extend_from_slice(score_str.as_bytes());
+    self.file_buf.push(b'\n');
 
         self.file_buf
             .extend_from_slice(self.current_exercise().name.as_bytes());
@@ -530,7 +571,14 @@ impl AppState {
         if !exercise.done {
             exercise.done = true;
             self.n_done += 1;
+             self.game_score += POINTS_PER_EXERCISE;
         }
+        //game
+        // let ind = self.current_exercise_ind;
+        // if !self.exercises[ind].done {
+        //     self.exercises[ind].done = true;
+        //     self.game_score += POINTS_PER_EXERCISE;
+        // }
 
         if let Some(ind) = self.next_pending_exercise_ind() {
             self.set_current_exercise_ind(ind)?;
@@ -566,6 +614,16 @@ impl AppState {
 
         Ok(())
     }
+//game 
+// in the impl AppState block, near the other accessors
+
+pub fn game_score(&self) -> u32 {
+    self.game_score
+}
+
+pub fn increment_game_score(&mut self) {
+    self.game_score += POINTS_PER_EXERCISE;
+}
 
     pub fn open_editor(&mut self) -> Result<EditorJoinHandle> {
         if let Some(editor) = self.editor.take() {
@@ -634,6 +692,7 @@ mod tests {
     #[test]
     fn next_pending_exercise() {
         let mut app_state = AppState {
+            game_score: 0,
             current_exercise_ind: 0,
             exercises: vec![dummy_exercise(), dummy_exercise(), dummy_exercise()],
             n_done: 0,
