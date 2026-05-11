@@ -14,9 +14,16 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 use super::tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab};
 use super::{THEME, destroy};
+use crate::app_state::AppState;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct App {
+    pub score:         u32,
+    pub last_output:  String,
+    pub exercise_name: &'static str,
+    pub exercise_path: &'static str,
+    pub n_done:        usize,
+    pub n_total:       usize,
     mode: Mode,
     tab: Tab,
     about_tab: AboutTab,
@@ -43,7 +50,32 @@ enum Tab {
     Traceroute,
     Weather,
 }
-
+impl App {
+    pub fn new(app_state: &AppState) -> Self {
+        let exercise = app_state.current_exercise();
+        let last_output = app_state.last_output().to_string();
+        Self {
+           last_output:   last_output.clone(),
+            score:         app_state.game_score(),
+            about_tab: AboutTab {
+                score: app_state.game_score(),
+                last_output: app_state.last_output().to_string(), 
+                ..Default::default()
+            },
+            exercise_name: exercise.name,
+            exercise_path: exercise.path,
+            n_done:        app_state.n_done() as usize,
+            n_total:       app_state.exercises().len(),
+            mode:          Mode::Running,
+            tab:           Tab::default(),
+            // about_tab:     AboutTab::default(),
+            recipe_tab:    RecipeTab::default(),
+            email_tab:     EmailTab::default(),
+            traceroute_tab: TracerouteTab::default(),
+            weather_tab:   WeatherTab::default(),
+        }
+    }
+}
 impl App {
     /// Run the app until the user quits.
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
@@ -161,7 +193,12 @@ impl App {
 
     fn render_selected_tab(&self, area: Rect, buf: &mut Buffer) {
         match self.tab {
-            Tab::About => self.about_tab.render(area, buf),
+             Tab::About => {
+            let mut tab = self.about_tab.clone();
+            tab.score = self.score;  // 👈 always use latest score
+            tab.last_output = self.last_output.clone();
+            tab.render(area, buf);
+        }
             Tab::Recipe => self.recipe_tab.render(area, buf),
             Tab::Email => self.email_tab.render(area, buf),
             Tab::Traceroute => self.traceroute_tab.render(area, buf),

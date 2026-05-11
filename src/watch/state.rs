@@ -86,6 +86,7 @@ impl<'a> WatchState<'a> {
             "\nChecking the exercise `{}`. Please wait…",
             self.app_state.current_exercise().name,
         )?;
+       
 
         let editor_handle = self.app_state.open_editor()?;
 
@@ -111,6 +112,7 @@ impl<'a> WatchState<'a> {
         }
 
         self.app_state.join_editor_handle(editor_handle)?;
+        self.app_state.set_last_output(&self.output);
         self.render(stdout)?;
 
         Ok(())

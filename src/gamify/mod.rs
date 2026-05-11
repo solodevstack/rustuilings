@@ -10,33 +10,27 @@ mod colors;
 mod destroy;
 mod tabs;
 mod theme;
+mod mascot;
 
-use std::io::stdout;
+
+use crate::{
+    app_state::AppState,
+};
 
 use app::App;
-use anyhow::Result;  // swap color_eyre for anyhow
-use crossterm::execute;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::layout::Rect;
 use ratatui::{TerminalOptions, Viewport};
+
+
 
 pub use self::colors::{RgbSwatch, color_from_oklab};
 pub use self::theme::THEME;
 
-// pub fn ratatui_render() -> anyhow::Result<()> {
-//     let viewport = Viewport::Fixed(Rect::new(0, 0, 81, 18));
-//     let terminal = ratatui::init_with_options(TerminalOptions { viewport });
-//     execute!(stdout(), EnterAlternateScreen)?;
-//     let app_result = App::default().run(terminal)
-//         .map_err(|e| anyhow::anyhow!(e));  // 👈 convert Report to anyhow::Error
-//     execute!(stdout(), LeaveAlternateScreen)?;
-//     ratatui::restore();
-//     app_result
-// }
-pub fn ratatui_render() -> anyhow::Result<()> {
+
+pub fn ratatui_render(app_state :&mut  AppState) -> anyhow::Result<()> {
     let viewport = Viewport::Fixed(Rect::new(0, 0, 81, 18));
     let terminal = ratatui::init_with_options(TerminalOptions { viewport });
-    let app_result = App::default().run(terminal)
+    let app_result = App::new(app_state).run(terminal)
         .map_err(|e| anyhow::anyhow!(e));
     ratatui::restore();
     app_result

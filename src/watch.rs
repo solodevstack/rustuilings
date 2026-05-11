@@ -154,7 +154,7 @@ fn watch_list_loop(
     crossterm::terminal::disable_raw_mode()?;
     execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
 
-    gamify::ratatui_render()?;
+    gamify::ratatui_render(app_state)?;
 
     // restore rustlings terminal state  
     execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen)?;

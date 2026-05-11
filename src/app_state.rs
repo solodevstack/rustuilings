@@ -64,23 +64,21 @@ pub struct AppState {
     cmd_runner: CmdRunner,
     emit_file_links: bool,
     editor: Option<Editor>,
+
+    pub last_output: String,   // 👈 stores last exercise output
 }
 
 impl AppState {
-    // pub fn new_gamestate(
-    //     exercise_infos: Vec<ExerciseInfo>,
-    //     final_message: &'static str,
-    //     editor: Option<Editor>,
-    //     vs_code_term: bool,
-    // ){
 
-    // }
     pub fn new(
         exercise_infos: Vec<ExerciseInfo>,
         final_message: &'static str,
         editor: Option<Editor>,
         vs_code_term: bool,
     ) -> Result<(Self, StateFileStatus)> {
+
+ 
+
         let cmd_runner = CmdRunner::build()?;
         let mut state_file = OpenOptions::new()
             .create(true)
@@ -133,6 +131,7 @@ impl AppState {
                 }
             })
             .collect::<Vec<_>>();
+
 
         //
         let mut game_score               = 0u32;
@@ -205,6 +204,7 @@ impl AppState {
 
         let slf = Self {
             game_score,
+             last_output: String::new(),
             current_exercise_ind,
             exercises,
             n_done,
@@ -620,6 +620,22 @@ impl AppState {
 pub fn game_score(&self) -> u32 {
     self.game_score
 }
+ /// Return the last exercise output for display in the gamify UI.
+    pub fn last_output(&self) -> &str {
+        &self.last_output
+    }
+//  pub fn set_last_output(&mut self, output: &[u8]) {
+//     self.last_output = String::from_utf8_lossy(output).into_owned();
+// }
+
+pub fn set_last_output(&mut self, output: &[u8]) {
+    let raw = String::from_utf8_lossy(output);
+    // strip ANSI escape sequences \x1b[...m
+    let stripped = strip_ansi(&raw);
+    self.last_output = stripped;
+}
+
+
 
 pub fn increment_game_score(&mut self) {
     self.game_score += POINTS_PER_EXERCISE;
@@ -646,6 +662,21 @@ pub fn increment_game_score(&mut self) {
 
         Ok(())
     }
+}
+fn strip_ansi(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars  = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            // skip until 'm'
+            for nc in chars.by_ref() {
+                if nc == 'm' { break; }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
 }
 
 const BAD_INDEX_ERR: &str = "The current exercise index is higher than the number of exercises";
@@ -689,10 +720,28 @@ mod tests {
         }
     }
 
+        fn make_app_state(exercises: Vec<Exercise>) -> AppState {
+        AppState {
+            game_score:           0,
+            last_output:          String::new(),
+            current_exercise_ind: 0,
+            exercises,
+            n_done:               0,
+            final_message:        "",
+            state_file:           tempfile::tempfile().unwrap(),
+            file_buf:             Vec::new(),
+            official_exercises:   true,
+            cmd_runner:           CmdRunner::build().unwrap(),
+            emit_file_links:      true,
+            editor:               None,
+        }
+    }
+
     #[test]
     fn next_pending_exercise() {
         let mut app_state = AppState {
             game_score: 0,
+            last_output:          String::new(),
             current_exercise_ind: 0,
             exercises: vec![dummy_exercise(), dummy_exercise(), dummy_exercise()],
             n_done: 0,
@@ -727,5 +776,105 @@ mod tests {
         assert([true, false, false], [Some(1), Some(2), Some(1)]);
         assert([false, true, false], [Some(2), Some(2), Some(0)]);
         assert([false, false, true], [Some(1), Some(0), Some(0)]);
+
+
     }
+
+
+
+    #[test]
+    fn game_score_starts_at_zero() {
+        let app_state = make_app_state(vec![dummy_exercise()]);
+        assert_eq!(app_state.game_score(), 0);
+    }
+ 
+    #[test]
+    fn increment_game_score_adds_points() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        app_state.increment_game_score();
+        assert_eq!(app_state.game_score(), POINTS_PER_EXERCISE);
+    }
+ 
+    #[test]
+    fn increment_game_score_accumulates() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        app_state.increment_game_score();
+        app_state.increment_game_score();
+        app_state.increment_game_score();
+        assert_eq!(app_state.game_score(), 3 * POINTS_PER_EXERCISE);
+    }
+ 
+    // ── last_output ──────────────────────────────────────────────────────────
+ 
+    #[test]
+    fn last_output_starts_empty() {
+        let app_state = make_app_state(vec![dummy_exercise()]);
+        assert_eq!(app_state.last_output(), "");
+    }
+ 
+    #[test]
+    fn set_last_output_stores_utf8() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        app_state.set_last_output(b"error[E0381]: used binding `x` isn't initialized");
+        assert!(app_state.last_output().contains("E0381"));
+    }
+ 
+    #[test]
+    fn set_last_output_overwrites_previous() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        app_state.set_last_output(b"first error");
+        app_state.set_last_output(b"second error");
+        assert_eq!(app_state.last_output(), "second error");
+    }
+ 
+    #[test]
+    fn set_last_output_handles_invalid_utf8() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        // from_utf8_lossy replaces invalid bytes with the replacement char
+        app_state.set_last_output(&[0xFF, 0xFE, b'o', b'k']);
+        assert!(app_state.last_output().contains("ok"));
+    }
+ 
+    #[test]
+    fn set_last_output_handles_empty_bytes() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        app_state.set_last_output(b"");
+        assert_eq!(app_state.last_output(), "");
+    }
+ 
+    // ── set_status ───────────────────────────────────────────────────────────
+ 
+    #[test]
+    fn set_status_marks_done() {
+        let mut app_state = make_app_state(vec![dummy_exercise(), dummy_exercise()]);
+        let changed = app_state.set_status(0, true).unwrap();
+        assert!(changed);
+        assert!(app_state.exercises[0].done);
+        assert_eq!(app_state.n_done(), 1);
+    }
+ 
+    #[test]
+    fn set_status_no_change_when_same() {
+        let mut app_state = make_app_state(vec![dummy_exercise()]);
+        let changed = app_state.set_status(0, false).unwrap();
+        assert!(!changed);
+    }
+ 
+    // ── n_done / n_pending ───────────────────────────────────────────────────
+ 
+    #[test]
+    fn n_pending_equals_total_minus_done() {
+        let mut app_state = make_app_state(vec![
+            dummy_exercise(),
+            dummy_exercise(),
+            dummy_exercise(),
+        ]);
+        app_state.set_status(0, true).unwrap();
+        assert_eq!(app_state.n_done(), 1);
+        assert_eq!(app_state.n_pending(), 2);
+        assert_eq!(app_state.n_done() + app_state.n_pending(), 3);
+    }
+
 }
+
+

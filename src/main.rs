@@ -173,7 +173,7 @@ fn main() -> Result<ExitCode> {
 
             let current_exercise = app_state.current_exercise();
             let mut stdout = io::stdout().lock();
-            stdout.write_all(b"Current exercise: ")?;
+            stdout.write_all(b"Current exercise Hint: ")?;
             current_exercise.terminal_file_link(&mut stdout, app_state.emit_file_links())?;
 
             stdout.write_all(b"\n\nHint:\n")?;
@@ -183,6 +183,7 @@ fn main() -> Result<ExitCode> {
         // Handled in an earlier match.
         Some(Command::Init | Command::Dev(_)) => (),
         Some(Command::Rustuigames { name }) =>{
+
             
         }
     }
