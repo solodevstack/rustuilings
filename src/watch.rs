@@ -10,6 +10,7 @@ use std::{
     },
     time::Duration,
 };
+use crate::exercise::RunnableExercise;
 
 use crate::{
     app_state::{AppState, ExercisesProgress},
@@ -149,14 +150,48 @@ fn watch_list_loop(
             // watch state.
             WatchExit::List => list::list(app_state)?,
 
-          WatchExit::Game => {
-    // save rustlings terminal state
+//           WatchExit::Game => {
+//     // save rustlings terminal state
+//     crossterm::terminal::disable_raw_mode()?;
+//     execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
+
+//     gamify::ratatui_render(app_state)?;
+
+//     // restore rustlings terminal state  
+//     execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen)?;
+//     crossterm::terminal::enable_raw_mode()?;
+// }
+// WatchExit::Game => {
+//     crossterm::terminal::disable_raw_mode()?;
+//     execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
+
+//     // force run current exercise so last_output is fresh
+//     let mut output = Vec::with_capacity(crate::exercise::OUTPUT_CAPACITY);
+//     let exercise = app_state.current_exercise();
+//     let _ = exercise.run_exercise(Some(&mut output), app_state.cmd_runner());
+//     app_state.set_last_output(&output);  // 👈 now last_output is current
+
+//     gamify::ratatui_render(app_state)?;
+
+//     execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen)?;
+//     crossterm::terminal::enable_raw_mode()?;
+// }
+WatchExit::Game => {
     crossterm::terminal::disable_raw_mode()?;
     execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
 
+    // always run current exercise fresh before entering game
+    // so the output panel reflects the actual current state
+    {
+        let mut output = Vec::with_capacity(crate::exercise::OUTPUT_CAPACITY);
+        let _ = app_state
+            .current_exercise()
+            .run_exercise(Some(&mut output), app_state.cmd_runner());
+        app_state.set_last_output(&output);  // 👈 replaces watch mode output
+    }
+
     gamify::ratatui_render(app_state)?;
 
-    // restore rustlings terminal state  
     execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen)?;
     crossterm::terminal::enable_raw_mode()?;
 }

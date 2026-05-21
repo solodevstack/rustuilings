@@ -4,5 +4,5 @@ fn main() {
     println!("Number {x}");
     let x;
     x = 5; // Don't change this line
-    println!("Number {x}");
+   println!("Number {x}");
 }

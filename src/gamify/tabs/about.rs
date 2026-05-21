@@ -29,7 +29,7 @@ impl Widget for AboutTab {
         let layout = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
         let [logo_area, description] = area.layout(&layout);
 
-        render_crate_description(description, buf, &self.last_output, self.row_index);
+        render_crate_description(description, buf, &self.last_output, self.row_index, self.score);
 
         let eye_state = if self.row_index % 2 == 0 {
             MascotEyeColor::Default
@@ -55,9 +55,10 @@ fn render_crate_description(
     buf: &mut Buffer,
     output: &str,
     row_index: usize,
+    score:u32,
 ) {
     let area = area.inner(Margin {
-        vertical: 4,
+        vertical: 1,
         horizontal: 2,
     });
     Clear.render(area, buf);
@@ -67,7 +68,7 @@ fn render_crate_description(
         horizontal: 2,
     });
 
-    let (text, title, text_style) = if output.is_empty() {
+    let (text, title, text_style,score) = if output.is_empty() {
         (
             "- cooking up terminal user interfaces -\n\n\
              Ratatui is a Rust crate that provides widgets \
@@ -76,15 +77,21 @@ fn render_crate_description(
                 .to_string(),
             " Ratatui ",
             THEME.description,
+            score
         )
     } else {
-        (
+        (    
             output.to_string(),
+            
             " Exercise Output ",
+        
             Style::default().fg(Color::Red),
+            score
         )
     };
 
+    Paragraph::new(score.to_string()).block(Block::bordered().title("Score")).render(area, buf);
+   
     Paragraph::new(text.as_str())
         .style(text_style)
         .block(

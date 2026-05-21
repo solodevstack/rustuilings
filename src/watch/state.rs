@@ -165,6 +165,8 @@ impl<'a> WatchState<'a> {
         if self.app_state.current_exercise_ind() != exercise_ind {
             return Ok(());
         }
+        self.app_state.set_last_output(&self.output);  // 👈 2. file change rerun
+        stdout.write_all(&self.output)?;
 
         self.run_current_exercise(stdout)
     }
@@ -285,6 +287,7 @@ impl<'a> WatchState<'a> {
     pub fn check_all_exercises(&mut self, stdout: &mut StdoutLock) -> Result<ExercisesProgress> {
         // Ignore any input until checking all exercises is done.
         let _input_pause_guard = InputPauseGuard::scoped_pause();
+        self.app_state.set_last_output(&self.output);
 
         if let Some(first_pending_exercise_ind) = self.app_state.check_all_exercises(stdout)? {
             // Only change exercise if the current one is done.
@@ -299,6 +302,7 @@ impl<'a> WatchState<'a> {
             self.app_state.render_final_message(stdout)?;
             Ok(ExercisesProgress::AllDone)
         }
+
     }
 
     pub fn update_term_width(&mut self, width: u16, stdout: &mut StdoutLock) -> io::Result<()> {
